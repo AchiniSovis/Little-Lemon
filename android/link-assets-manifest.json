@@ -1,0 +1,13 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/Karla-Regular.ttf",
+      "sha1": "bf625e46311c6b71174dffced388ec963ddceacf"
+    },
+    {
+      "path": "assets/fonts/MarkaziText-Regular.ttf",
+      "sha1": "d49480aeb0aa63c31bd42fb87c96589e816b3f4a"
+    }
+  ]
+}

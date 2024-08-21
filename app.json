@@ -2,6 +2,9 @@
   "expo": {
     "name": "Little-Lemon",
     "slug": "Little-Lemon",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
