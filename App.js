@@ -5,7 +5,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Onboarding from "./screens/Onboarding";
 import Splash from "./screens/Splash";
-
+import Home from "./screens/Home";
 
 import Profile from "./screens/Profile";
 import { useEffect, useState } from "react";
@@ -17,6 +17,13 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Splash">
+
+
+        <Stack.Screen
+          name="Home"
+          component={Home}
+          options={{ headerShown: false }}
+        />
      
         <Stack.Screen
           name="Splash"

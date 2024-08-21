@@ -227,7 +227,10 @@ export default function Profile({ navigation, route }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+      <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.back}>
       <Image style={styles.backIcon} source={require("../assets/backicon.png")} />
+      </TouchableOpacity>
+        
         <Image style={styles.logo} source={require("../assets/logo.png")} />
 
 <View style={styles.profileContainer}>
@@ -427,12 +430,17 @@ const styles = StyleSheet.create({
     flexDirection:"row",
     
   },
+  back:{
+    width:60,
+    height:60,
+       marginLeft: 15,
+     marginTop: 35,
+  },
   backIcon:{
     width: 60,
     height:60,
      resizeMode: "contain",
-     marginLeft: 15,
-     marginTop: 35,
+  
   },
   logo: {
     width: 170,

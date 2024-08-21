@@ -19,7 +19,7 @@ const [isLoading, setIsLoading] = useState(false);
 
         const value = await AsyncStorage.getItem("UserName");
         if (value) {
-          navigation.navigate('Profile');
+          navigation.navigate('Home');
         } else {
           navigation.navigate('Onboarding');
         }
@@ -53,7 +53,7 @@ const [isLoading, setIsLoading] = useState(false);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#EDEFEE",
+    backgroundColor: "yellow",
     justifyContent: "center",
     alignItems: "center",
   },
