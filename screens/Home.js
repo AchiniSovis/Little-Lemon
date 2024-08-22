@@ -7,7 +7,8 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  TouchableOpacity
+  TouchableOpacity,
+  Alert
 } from "react-native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
@@ -15,11 +16,14 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Searchbar } from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
+import { init, insertMenuItems, fetchMenuItems } from "../db";
+import * as SQLite from 'expo-sqlite/legacy';
 
-export default function Home({navigation}) {
+export default function Home({ navigation }) {
   const [fontsLoaded] = useFonts({
     Markazi: require("../assets/fonts/MarkaziText-Regular.ttf"),
     Karla: require("../assets/fonts/Karla-Regular.ttf"),
+    KarlaBold: require("../assets/fonts/Karla-Bold.ttf"),
   });
 
   const [image, setImage] = useState(null);
@@ -28,9 +32,12 @@ export default function Home({navigation}) {
 
   const isFocused = useIsFocused(); // Hook to check if screen is focused
 
-//   useEffect(() => {
-//     getData();
-//   }, []);
+  const [menuData, setMenuData] = useState([]);
+
+  useEffect(() => {
+    // Call fetchMenuData when the component mounts
+    fetchMenuData();
+  }, []);
 
   const getData = async () => {
     try {
@@ -52,11 +59,39 @@ export default function Home({navigation}) {
     }
   };
 
-    useEffect(() => {
+  useEffect(() => {
     if (isFocused) {
       getData(); // Refresh profile image and other data when the screen gains focus
     }
   }, [isFocused]);
+
+
+  const fetchMenuData = async () => {
+  try {
+    // Check if menu data is already in the SQLite database
+    const storedMenuItems = await fetchMenuItems();
+    if (storedMenuItems.length > 0) {
+      setMenuData(storedMenuItems);
+      Alert.alert("retrieved from database");
+      return; // Exit early if data is already available
+    }
+
+    // Fetch the data from the server
+    const response = await fetch(
+      "https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/capstone.json"
+    );
+    const json = await response.json();
+    setMenuData(json.menu);
+    Alert.alert("retrieved from api");
+
+    // Insert new data into the menu table
+    await insertMenuItems(json.menu);
+    Alert.alert("insert data to database");
+  } catch (error) {
+    console.error("Error fetching menu data:", error);
+  }
+};
+
 
   useEffect(() => {
     // Hide the splash screen when fonts are loaded
@@ -74,7 +109,6 @@ export default function Home({navigation}) {
     lastName[0] || ""
   }`.toUpperCase();
 
- 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -84,7 +118,10 @@ export default function Home({navigation}) {
         />
         <Image style={styles.logo} source={require("../assets/logo.png")} />
         <View style={styles.profileContainer}>
-          <TouchableOpacity onPress={()=> navigation.navigate('Profile')} style={styles.profilePlaceholder}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Profile")}
+            style={styles.profilePlaceholder}
+          >
             {image ? (
               <Image source={{ uri: image }} style={styles.profile} />
             ) : (
@@ -100,10 +137,7 @@ export default function Home({navigation}) {
         style={styles.scrollableContainer}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ScrollView
-          style={styles.scrollableContent}
-          keyboardDismissMode="on-drag"
-        >
+        <View style={styles.scrollableContent} keyboardDismissMode="on-drag">
           <View style={styles.content}>
             <Text style={styles.DisplayText}>Little Lemon</Text>
             <Text style={styles.SubTitle}>Chicago</Text>
@@ -130,7 +164,35 @@ export default function Home({navigation}) {
               elevation={0}
             />
           </View>
-        </ScrollView>
+        </View>
+
+        <FlatList
+          data={menuData}
+          keyExtractor={(item, index) => `${item.name}-${index}`} // Generate unique key
+          renderItem={({ item }) => (
+            <View>
+              <View style={styles.item}>
+                <View style={styles.TextContainer}>
+                  <Text style={styles.title}>{item.name}</Text>
+                  <ScrollView style={styles.scrollText} horizontal={true}>
+                    <Text style={styles.descriptionText}>
+                      {item.description}
+                    </Text>
+                  </ScrollView>
+                  <Text style={styles.priceText}>${item.price.toFixed(2)}</Text>
+                </View>
+                <Image
+                  source={{
+                    uri: `https://github.com/Meta-Mobile-Developer-PC/Working-With-Data-API/blob/main/images/${item.image}?raw=true`,
+                  }}
+                  style={styles.image}
+                />
+              </View>
+              <View style={styles.divider} />
+            </View>
+          )}
+          contentContainerStyle={styles.menulist}
+        />
       </KeyboardAvoidingView>
     </View>
   );
@@ -151,6 +213,7 @@ const styles = StyleSheet.create({
     zIndex: 10, // Ensures the header stays on top
     height: 110, // Fixed header height
     flexDirection: "row",
+    
   },
   backIcon: {
     width: 60,
@@ -243,13 +306,54 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   searchBar: {
-    marginBottom: 15,
-    width: 387,
-    borderRadius: 16,
-    marginTop: 20,
+    width: 388,
+    borderRadius: 15,
+    marginTop: 15,
     backgroundColor: "#fff",
     shadowRadius: 0,
     shadowOpacity: 0,
-    alignSelf: "center"
+    alignSelf: "center",
+  },
+  item: {
+    paddingLeft: 9,
+    marginBottom: 20,
+    flexDirection: "row",
+  },
+  TextContainer: {
+    paddingRight: 20,
+  },
+  image: {
+    width: 100,
+    height: 100,
+
+    marginTop: 10,
+  },
+  title: {
+    fontSize: 18,
+    fontFamily: "KarlaBold",
+  },
+  descriptionText: {
+    fontFamily: "Karla",
+    fontSize: 16,
+    color: "#495E57",
+    marginTop: 15,
+    width: 550,
+  },
+  menulist: {
+    padding: 15,
+  },
+  scrollText: {
+    width: 270,
+  },
+  priceText: {
+    marginBottom: 10,
+    fontSize: 16,
+    fontFamily: "KarlaBold",
+  },
+  divider: {
+    height: 1,
+    width: "100%",
+    backgroundColor: "#EDEFEE",
+    marginBottom: 25,
   },
 });

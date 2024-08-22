@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Onboarding from "./screens/Onboarding";
 import Splash from "./screens/Splash";
 import Home from "./screens/Home";
+import Test from "./screens/Test";
 
 import Profile from "./screens/Profile";
 import { useEffect, useState } from "react";
@@ -19,7 +20,7 @@ export default function App() {
       <Stack.Navigator initialRouteName="Splash">
 
 
-        <Stack.Screen
+         <Stack.Screen
           name="Home"
           component={Home}
           options={{ headerShown: false }}
@@ -40,7 +41,13 @@ export default function App() {
           name="Profile"
           component={Profile}
           options={{ headerShown: false }}
-        />
+        />  
+
+         {/* <Stack.Screen
+          name="Test"
+          component={Test}
+          options={{ headerShown: false }}
+        /> */}
       </Stack.Navigator>
     </NavigationContainer>
   );
