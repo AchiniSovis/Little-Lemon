@@ -41,13 +41,13 @@ export default function App() {
           name="Profile"
           component={Profile}
           options={{ headerShown: false }}
-        />  
+        />   
 
-         {/* <Stack.Screen
+          {/* <Stack.Screen
           name="Test"
           component={Test}
           options={{ headerShown: false }}
-        /> */}
+        />  */}
       </Stack.Navigator>
     </NavigationContainer>
   );

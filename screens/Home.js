@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Searchbar } from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
-import { init, insertMenuItems, fetchMenuItems } from "../db";
+import { init, insertMenuItems, fetchMenuItems } from "../db.js";
 import * as SQLite from 'expo-sqlite/legacy';
 
 export default function Home({ navigation }) {
@@ -34,9 +34,23 @@ export default function Home({ navigation }) {
 
   const [menuData, setMenuData] = useState([]);
 
-  useEffect(() => {
-    // Call fetchMenuData when the component mounts
-    fetchMenuData();
+  // useEffect(() => {
+  //   // Call fetchMenuData when the component mounts
+  //   fetchMenuData();
+  // }, []);
+
+   useEffect(() => {
+    // Initialize the database and fetch menu data
+    const initializeDatabase = async () => {
+      try {
+        await init(); // Ensure the table is created
+        fetchMenuData(); // Fetch data after initialization
+      } catch (error) {
+        console.error('Error initializing database:', error);
+      }
+    };
+
+    initializeDatabase();
   }, []);
 
   const getData = async () => {
@@ -165,6 +179,10 @@ export default function Home({ navigation }) {
             />
           </View>
         </View>
+        <Text style={styles.delivery}>ORDER FOR DELIVERY !</Text>
+        <ScrollView>
+          
+        </ScrollView>
 
         <FlatList
           data={menuData}
@@ -180,6 +198,7 @@ export default function Home({ navigation }) {
                     </Text>
                   </ScrollView>
                   <Text style={styles.priceText}>${item.price.toFixed(2)}</Text>
+                   <Text style={styles.priceText}>{item.category}</Text>
                 </View>
                 <Image
                   source={{
@@ -356,4 +375,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#EDEFEE",
     marginBottom: 25,
   },
+  delivery:{
+     fontSize: 20,
+    fontFamily: "KarlaBold",
+    marginTop: 20,
+    marginLeft: 24.5,
+  }
 });
