@@ -18,6 +18,8 @@ import { Searchbar } from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 import { init, insertMenuItems, fetchMenuItems } from "../db.js";
 import * as SQLite from 'expo-sqlite/legacy';
+import CategoryList from "../CategoryList.js";
+
 
 export default function Home({ navigation }) {
   const [fontsLoaded] = useFonts({
@@ -33,6 +35,8 @@ export default function Home({ navigation }) {
   const isFocused = useIsFocused(); // Hook to check if screen is focused
 
   const [menuData, setMenuData] = useState([]);
+    const [selectedCategories, setSelectedCategories] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   // useEffect(() => {
   //   // Call fetchMenuData when the component mounts
@@ -86,6 +90,7 @@ export default function Home({ navigation }) {
     const storedMenuItems = await fetchMenuItems();
     if (storedMenuItems.length > 0) {
       setMenuData(storedMenuItems);
+      setCategories([...new Set(storedMenuItems.map(item => item.category))]); // Extract unique categories
       Alert.alert("retrieved from database");
       return; // Exit early if data is already available
     }
@@ -96,6 +101,7 @@ export default function Home({ navigation }) {
     );
     const json = await response.json();
     setMenuData(json.menu);
+     setCategories([...new Set(json.menu.map(item => item.category))]); // Extract unique categories
     Alert.alert("retrieved from api");
 
     // Insert new data into the menu table
@@ -122,6 +128,15 @@ export default function Home({ navigation }) {
   const userInitials = `${firstName[0] || ""}${
     lastName[0] || ""
   }`.toUpperCase();
+
+
+   const handleSelectCategory = (category) => {
+    setSelectedCategories((prevSelectedCategories) =>
+      prevSelectedCategories.includes(category)
+        ? prevSelectedCategories.filter((cat) => cat !== category)
+        : [...prevSelectedCategories, category]
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -180,12 +195,17 @@ export default function Home({ navigation }) {
           </View>
         </View>
         <Text style={styles.delivery}>ORDER FOR DELIVERY !</Text>
-        <ScrollView>
-          
-        </ScrollView>
+        <View style={styles.categoryComponent} horizontal={true}>
+         {/* Add the CategoryList component here */}
+        <CategoryList
+          categories={categories}
+          selectedCategories={selectedCategories}
+          onSelectCategory={handleSelectCategory}
+        />
+        </View>
 
         <FlatList
-          data={menuData}
+          data={menuData.filter(item => selectedCategories.includes(item.category) || selectedCategories.length === 0)} // Filter menu data based on selected categories
           keyExtractor={(item, index) => `${item.name}-${index}`} // Generate unique key
           renderItem={({ item }) => (
             <View>
@@ -380,5 +400,11 @@ const styles = StyleSheet.create({
     fontFamily: "KarlaBold",
     marginTop: 20,
     marginLeft: 24.5,
+  },
+  categoryComponent:{
+   
+   
+    backgroundColor: "white", // Ensure background color to prevent overlap issue
+    zIndex: 1, // 
   }
 });
