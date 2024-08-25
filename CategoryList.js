@@ -1,6 +1,12 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
+
+// Helper function to capitalize the first letter of a string
+const capitalizeFirstLetter = (string) => {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
+
 const CategoryList = ({ categories, selectedCategories, onSelectCategory }) => {
 
   const handlePress = (category) => {
@@ -24,7 +30,7 @@ const CategoryList = ({ categories, selectedCategories, onSelectCategory }) => {
               selectedCategories.includes(category) && styles.selectedCategoryText,
             ]}
           >
-            {category}
+           {capitalizeFirstLetter(category)}
           </Text>
         </TouchableOpacity>
       ))}
@@ -43,7 +49,7 @@ const styles = StyleSheet.create({
   },
   categoryButton: {
     backgroundColor: "#EDEFEE",
-    borderRadius: 20,
+    borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 20,
     marginRight: 10,
@@ -52,12 +58,12 @@ const styles = StyleSheet.create({
     height: 40,
   },
   selectedCategory: {
-    backgroundColor: "#9F9F9F",
+    backgroundColor: "#495E57",
   
   },
   categoryText: {
     color: "#495E57",
-    fontFamily: "Karla",
+    fontFamily: "KarlaBold",
     fontSize: 16,
   },
   selectedCategoryText: {

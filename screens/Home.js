@@ -90,7 +90,9 @@ export default function Home({ navigation }) {
     const storedMenuItems = await fetchMenuItems();
     if (storedMenuItems.length > 0) {
       setMenuData(storedMenuItems);
-      setCategories([...new Set(storedMenuItems.map(item => item.category))]); // Extract unique categories
+        setCategories([
+        ...new Set([...storedMenuItems.map(item => item.category), 'Drinks', 'Specials'])
+      ]);
       Alert.alert("retrieved from database");
       return; // Exit early if data is already available
     }
@@ -101,7 +103,9 @@ export default function Home({ navigation }) {
     );
     const json = await response.json();
     setMenuData(json.menu);
-     setCategories([...new Set(json.menu.map(item => item.category))]); // Extract unique categories
+     setCategories([
+      ...new Set([...json.menu.map(item => item.category), 'Drinks', 'Specials'])
+    ]); // Extract unique categories
     Alert.alert("retrieved from api");
 
     // Insert new data into the menu table
@@ -191,17 +195,21 @@ export default function Home({ navigation }) {
               iconColor="black"
               inputStyle={{ color: "black" }}
               elevation={0}
+            
             />
           </View>
         </View>
         <Text style={styles.delivery}>ORDER FOR DELIVERY !</Text>
-        <View style={styles.categoryComponent} horizontal={true}>
-         {/* Add the CategoryList component here */}
+        <View style={styles.categoryComponent}>
+        <ScrollView horizontal={true}>
+        
         <CategoryList
           categories={categories}
           selectedCategories={selectedCategories}
           onSelectCategory={handleSelectCategory}
         />
+        </ScrollView>
+        <View style={styles.categoryDivider} />
         </View>
 
         <FlatList
@@ -400,11 +408,18 @@ const styles = StyleSheet.create({
     fontFamily: "KarlaBold",
     marginTop: 20,
     marginLeft: 24.5,
+    marginBottom: 10,
   },
   categoryComponent:{
    
    
     backgroundColor: "white", // Ensure background color to prevent overlap issue
     zIndex: 1, // 
-  }
+  },
+   categoryDivider: {
+    height: 1,
+    width: "100%",
+    backgroundColor: "#EDEFEE",
+    marginTop: 5,
+   },
 });
