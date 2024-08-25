@@ -116,6 +116,20 @@ export default function Home({ navigation }) {
   }
 };
 
+ useEffect(() => {
+    // Fetch filtered menu items whenever selectedCategories changes
+    const fetchFilteredMenuData = async () => {
+      try {
+        const filteredMenuItems = await fetchMenuItems(selectedCategories);
+        setMenuData(filteredMenuItems);
+      } catch (error) {
+        console.error("Error fetching filtered menu data:", error);
+      }
+    };
+
+    fetchFilteredMenuData();
+  }, [selectedCategories]);
+
 
   useEffect(() => {
     // Hide the splash screen when fonts are loaded

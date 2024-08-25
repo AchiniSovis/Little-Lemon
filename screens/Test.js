@@ -28,7 +28,13 @@ export default function Test() {
         // ];
         // await insertMenuItems(testItems);
         // console.log('Test data inserted');
-
+           // Insert test data
+    console.log('Inserting test data...');
+    const menuItems = [
+      { name: 'Test Item', price: 10.0, description: 'Test Description', image: 'test.png', category: 'Test Category' }
+    ];
+    await insertMenuItems(menuItems);
+    console.log('Test data inserted successfully.');
         //Fetch menu items to confirm deletion
         const items = await fetchMenuItems();
         console.log('Fetched items:', items); // Check if data was fetched
