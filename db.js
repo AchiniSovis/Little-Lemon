@@ -44,19 +44,48 @@ export const insertMenuItems = menuItems => {
 //   });
 // };
 
-export const fetchMenuItems = (categories = []) => {
+// export const fetchMenuItems = (categories = []) => {
+//   return new Promise((resolve, reject) => {
+//     db.transaction(tx => {
+//       // Construct the SQL query based on whether categories are provided
+//       const query = categories.length > 0
+//       // If categories are provided, use a parameterized query to filter by these categories
+//         ? `SELECT * FROM menu WHERE category IN (${categories.map(() => '?').join(', ')});`
+//         // If no categories are provided, select all items
+//         : 'SELECT * FROM menu;';
+//    // Execute the SQL query
+//       tx.executeSql(
+//         query, // The SQL query string
+//         categories, // The values to replace placeholders in the query, if any
+//         (_, { rows: { _array } }) => resolve(_array), // On success, resolve with the fetched rows
+//         (_, error) => reject(error) // On error, reject with the error
+//       );
+//     });
+//   });
+// };
+
+
+export const fetchMenuItems = (categories = [], searchText = '') => {
   return new Promise((resolve, reject) => {
     db.transaction(tx => {
-      // Construct the SQL query based on whether categories are provided
-      const query = categories.length > 0
-      // If categories are provided, use a parameterized query to filter by these categories
-        ? `SELECT * FROM menu WHERE category IN (${categories.map(() => '?').join(', ')});`
-        // If no categories are provided, select all items
-        : 'SELECT * FROM menu;';
-   // Execute the SQL query
+      // Construct the SQL query based on whether categories and searchText are provided
+      let query = 'SELECT * FROM menu';
+      const params = [];
+
+      if (categories.length > 0) {
+        query += ' WHERE category IN (' + categories.map(() => '?').join(', ') + ')';
+        params.push(...categories);
+      }
+
+      if (searchText) {
+        // If searchText is provided, add the search filter to the query
+        query += (categories.length > 0 ? ' AND ' : ' WHERE ') + 'name LIKE ?';
+        params.push(`%${searchText}%`);
+      }
+
       tx.executeSql(
         query, // The SQL query string
-        categories, // The values to replace placeholders in the query, if any
+        params, // The values to replace placeholders in the query
         (_, { rows: { _array } }) => resolve(_array), // On success, resolve with the fetched rows
         (_, error) => reject(error) // On error, reject with the error
       );

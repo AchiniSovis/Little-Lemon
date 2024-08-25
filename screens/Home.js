@@ -12,13 +12,14 @@ import {
 } from "react-native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Searchbar } from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 import { init, insertMenuItems, fetchMenuItems } from "../db.js";
 import * as SQLite from 'expo-sqlite/legacy';
 import CategoryList from "../CategoryList.js";
+import debounce from 'lodash.debounce'; // Import debounce from lodash
 
 
 export default function Home({ navigation }) {
@@ -35,8 +36,9 @@ export default function Home({ navigation }) {
   const isFocused = useIsFocused(); // Hook to check if screen is focused
 
   const [menuData, setMenuData] = useState([]);
-    const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [searchText, setSearchText] = useState('');
 
   // useEffect(() => {
   //   // Call fetchMenuData when the component mounts
@@ -57,31 +59,27 @@ export default function Home({ navigation }) {
     initializeDatabase();
   }, []);
 
-  const getData = async () => {
-    try {
-      const storedFirstName = await AsyncStorage.getItem("UserName");
-      const storedLastName = await AsyncStorage.getItem("UserLastName");
-      const storedImage = await AsyncStorage.getItem("UserImage");
+    useEffect(() => {
+    // Refresh profile data when the screen gains focus
+    const getData = async () => {
+      try {
+        const storedFirstName = await AsyncStorage.getItem("UserName");
+        const storedLastName = await AsyncStorage.getItem("UserLastName");
+        const storedImage = await AsyncStorage.getItem("UserImage");
 
-      if (storedFirstName !== null) {
-        setFirstName(storedFirstName);
+        if (storedFirstName !== null) setFirstName(storedFirstName);
+        if (storedLastName !== null) setLastName(storedLastName);
+        if (storedImage !== null) setImage(storedImage);
+      } catch (error) {
+        console.log(error);
       }
-      if (storedLastName !== null) {
-        setLastName(storedLastName);
-      }
-      if (storedImage !== null) {
-        setImage(storedImage);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
+    };
     if (isFocused) {
-      getData(); // Refresh profile image and other data when the screen gains focus
+      getData();
     }
   }, [isFocused]);
+
+ 
 
 
   const fetchMenuData = async () => {
@@ -116,44 +114,45 @@ export default function Home({ navigation }) {
   }
 };
 
- useEffect(() => {
-    // Fetch filtered menu items whenever selectedCategories changes
-    const fetchFilteredMenuData = async () => {
-      try {
-        const filteredMenuItems = await fetchMenuItems(selectedCategories);
-        setMenuData(filteredMenuItems);
-      } catch (error) {
-        console.error("Error fetching filtered menu data:", error);
-      }
-    };
-
-    fetchFilteredMenuData();
-  }, [selectedCategories]);
-
+  const fetchFilteredMenuData = useCallback(async () => {
+    try {
+      const filteredMenuItems = await fetchMenuItems(selectedCategories, searchText);
+      setMenuData(filteredMenuItems);
+    } catch (error) {
+      console.error('Error fetching filtered menu data:', error);
+    }
+  }, [selectedCategories, searchText]);
 
   useEffect(() => {
-    // Hide the splash screen when fonts are loaded
+    const debouncedFetchFilteredMenuData = debounce(fetchFilteredMenuData, 500);
+    debouncedFetchFilteredMenuData();
+    return () => {
+      debouncedFetchFilteredMenuData.cancel();
+    };
+  }, [fetchFilteredMenuData]);
+
+  useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
 
   if (!fontsLoaded) {
-    // Optionally render a loading indicator while fonts are loading
-    return null;
+    return null; // Optionally render a loading indicator while fonts are loading
   }
 
-  const userInitials = `${firstName[0] || ""}${
-    lastName[0] || ""
-  }`.toUpperCase();
+  const userInitials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
 
-
-   const handleSelectCategory = (category) => {
-    setSelectedCategories((prevSelectedCategories) =>
+  const handleSelectCategory = (category) => {
+    setSelectedCategories(prevSelectedCategories =>
       prevSelectedCategories.includes(category)
-        ? prevSelectedCategories.filter((cat) => cat !== category)
+        ? prevSelectedCategories.filter(cat => cat !== category)
         : [...prevSelectedCategories, category]
     );
+  };
+
+  const handleSearchChange = (query) => {
+    setSearchText(query);
   };
 
   return (
@@ -203,8 +202,8 @@ export default function Home({ navigation }) {
             <Searchbar
               placeholder="Search"
               placeholderTextColor="white"
-              //onChangeText={handleSearchChange}
-              //value={searchBarText}
+              onChangeText={handleSearchChange}
+              value={searchText}
               style={styles.searchBar}
               iconColor="black"
               inputStyle={{ color: "black" }}
@@ -213,6 +212,7 @@ export default function Home({ navigation }) {
             />
           </View>
         </View>
+        <View keyboardDismissMode= "on-drag">
         <Text style={styles.delivery}>ORDER FOR DELIVERY !</Text>
         <View style={styles.categoryComponent}>
         <ScrollView horizontal={true}>
@@ -254,6 +254,7 @@ export default function Home({ navigation }) {
           )}
           contentContainerStyle={styles.menulist}
         />
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
