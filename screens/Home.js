@@ -212,7 +212,7 @@ export default function Home({ navigation }) {
             />
           </View>
         </View>
-        <View keyboardDismissMode= "on-drag">
+        
         <Text style={styles.delivery}>ORDER FOR DELIVERY !</Text>
         <View style={styles.categoryComponent}>
         <ScrollView horizontal={true}>
@@ -254,7 +254,7 @@ export default function Home({ navigation }) {
           )}
           contentContainerStyle={styles.menulist}
         />
-        </View>
+       
       </KeyboardAvoidingView>
     </View>
   );
