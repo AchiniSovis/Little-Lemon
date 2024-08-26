@@ -8,59 +8,56 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  Alert
+  Alert,
+  SafeAreaView,
 } from "react-native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Searchbar } from "react-native-paper";
+import { StatusBar } from "expo-status-bar";
 import { useIsFocused } from "@react-navigation/native";
 import { init, insertMenuItems, fetchMenuItems } from "../db.js";
-import * as SQLite from 'expo-sqlite/legacy';
+import * as SQLite from "expo-sqlite/legacy";
 import CategoryList from "../CategoryList.js";
-import debounce from 'lodash.debounce'; // Import debounce from lodash
-
+import debounce from "lodash.debounce"; // Import debounce from lodash to limit API calls
 
 export default function Home({ navigation }) {
+  // Load custom fonts
   const [fontsLoaded] = useFonts({
     Markazi: require("../assets/fonts/MarkaziText-Regular.ttf"),
     Karla: require("../assets/fonts/Karla-Regular.ttf"),
     KarlaBold: require("../assets/fonts/Karla-Bold.ttf"),
   });
-
+  // State variables for user profile and menu data
   const [image, setImage] = useState(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-
-  const isFocused = useIsFocused(); // Hook to check if screen is focused
+  // Hook to check if screen is focused
+  const isFocused = useIsFocused();
 
   const [menuData, setMenuData] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
 
-  // useEffect(() => {
-  //   // Call fetchMenuData when the component mounts
-  //   fetchMenuData();
-  // }, []);
-
-   useEffect(() => {
-    // Initialize the database and fetch menu data
+  // Initialize database and fetch menu data
+  useEffect(() => {
     const initializeDatabase = async () => {
       try {
         await init(); // Ensure the table is created
-        fetchMenuData(); // Fetch data after initialization
+        fetchMenuData(); // Fetch menu data after initialization
       } catch (error) {
-        console.error('Error initializing database:', error);
+        console.error("Error initializing database:", error);
       }
     };
 
     initializeDatabase();
   }, []);
 
-    useEffect(() => {
-    // Refresh profile data when the screen gains focus
+  // Refresh profile data when the screen gains focus
+  useEffect(() => {
     const getData = async () => {
       try {
         const storedFirstName = await AsyncStorage.getItem("UserName");
@@ -79,50 +76,61 @@ export default function Home({ navigation }) {
     }
   }, [isFocused]);
 
- 
-
-
+  // Fetch menu data from SQLite or API
   const fetchMenuData = async () => {
-  try {
-    // Check if menu data is already in the SQLite database
-    const storedMenuItems = await fetchMenuItems();
-    if (storedMenuItems.length > 0) {
-      setMenuData(storedMenuItems);
+    try {
+      // Check if menu data is already in the SQLite database
+      const storedMenuItems = await fetchMenuItems();
+      if (storedMenuItems.length > 0) {
+        setMenuData(storedMenuItems);
         setCategories([
-        ...new Set([...storedMenuItems.map(item => item.category), 'Drinks', 'Specials'])
-      ]);
-      Alert.alert("retrieved from database");
-      return; // Exit early if data is already available
+          ...new Set([
+            ...storedMenuItems.map((item) => item.category),
+            "Drinks",
+            "Specials",
+          ]),
+        ]);
+        //Alert.alert("retrieved from database");
+        return; // Exit early if data is already available
+      }
+
+      // Fetch the data from the server
+      const response = await fetch(
+        "https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/capstone.json"
+      );
+      const json = await response.json();
+      setMenuData(json.menu);
+      setCategories([
+        ...new Set([
+          ...json.menu.map((item) => item.category),
+          "Drinks",
+          "Specials",
+        ]),
+      ]); // Extract unique categories
+      //Alert.alert("retrieved from api");
+
+      // Insert new data into the menu table
+      await insertMenuItems(json.menu);
+      // Alert.alert("insert data to database");
+    } catch (error) {
+      console.error("Error fetching menu data:", error);
     }
+  };
 
-    // Fetch the data from the server
-    const response = await fetch(
-      "https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/capstone.json"
-    );
-    const json = await response.json();
-    setMenuData(json.menu);
-     setCategories([
-      ...new Set([...json.menu.map(item => item.category), 'Drinks', 'Specials'])
-    ]); // Extract unique categories
-    Alert.alert("retrieved from api");
-
-    // Insert new data into the menu table
-    await insertMenuItems(json.menu);
-    Alert.alert("insert data to database");
-  } catch (error) {
-    console.error("Error fetching menu data:", error);
-  }
-};
-
+  // Fetch filtered menu data based on selected categories and search text
   const fetchFilteredMenuData = useCallback(async () => {
     try {
-      const filteredMenuItems = await fetchMenuItems(selectedCategories, searchText);
+      const filteredMenuItems = await fetchMenuItems(
+        selectedCategories,
+        searchText
+      );
       setMenuData(filteredMenuItems);
     } catch (error) {
-      console.error('Error fetching filtered menu data:', error);
+      console.error("Error fetching filtered menu data:", error);
     }
   }, [selectedCategories, searchText]);
 
+  // Debounce the fetchFilteredMenuData function to prevent excessive calls
   useEffect(() => {
     const debouncedFetchFilteredMenuData = debounce(fetchFilteredMenuData, 500);
     debouncedFetchFilteredMenuData();
@@ -131,6 +139,7 @@ export default function Home({ navigation }) {
     };
   }, [fetchFilteredMenuData]);
 
+  // Hide the splash screen once fonts are loaded
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
@@ -141,27 +150,28 @@ export default function Home({ navigation }) {
     return null; // Optionally render a loading indicator while fonts are loading
   }
 
-  const userInitials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
+  // Generate user initials for profile placeholder
+  const userInitials = `${firstName[0] || ""}${
+    lastName[0] || ""
+  }`.toUpperCase();
 
+  // Handle category selection
   const handleSelectCategory = (category) => {
-    setSelectedCategories(prevSelectedCategories =>
+    setSelectedCategories((prevSelectedCategories) =>
       prevSelectedCategories.includes(category)
-        ? prevSelectedCategories.filter(cat => cat !== category)
+        ? prevSelectedCategories.filter((cat) => cat !== category)
         : [...prevSelectedCategories, category]
     );
   };
-
+  // Handle search text change
   const handleSearchChange = (query) => {
     setSearchText(query);
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" backgroundColor="white" />
       <View style={styles.header}>
-        <Image
-          style={styles.backIcon}
-          source={require("../assets/backicon.png")}
-        />
         <Image style={styles.logo} source={require("../assets/logo.png")} />
         <View style={styles.profileContainer}>
           <TouchableOpacity
@@ -208,26 +218,28 @@ export default function Home({ navigation }) {
               iconColor="black"
               inputStyle={{ color: "black" }}
               elevation={0}
-            
             />
           </View>
         </View>
-        
+
         <Text style={styles.delivery}>ORDER FOR DELIVERY !</Text>
         <View style={styles.categoryComponent}>
-        <ScrollView horizontal={true}>
-        
-        <CategoryList
-          categories={categories}
-          selectedCategories={selectedCategories}
-          onSelectCategory={handleSelectCategory}
-        />
-        </ScrollView>
-        <View style={styles.categoryDivider} />
+          <ScrollView horizontal={true}>
+            <CategoryList
+              categories={categories}
+              selectedCategories={selectedCategories}
+              onSelectCategory={handleSelectCategory}
+            />
+          </ScrollView>
+          <View style={styles.categoryDivider} />
         </View>
 
         <FlatList
-          data={menuData.filter(item => selectedCategories.includes(item.category) || selectedCategories.length === 0)} // Filter menu data based on selected categories
+          data={menuData.filter(
+            (item) =>
+              selectedCategories.includes(item.category) ||
+              selectedCategories.length === 0
+          )} // Filter menu data based on selected categories
           keyExtractor={(item, index) => `${item.name}-${index}`} // Generate unique key
           renderItem={({ item }) => (
             <View>
@@ -240,7 +252,7 @@ export default function Home({ navigation }) {
                     </Text>
                   </ScrollView>
                   <Text style={styles.priceText}>${item.price.toFixed(2)}</Text>
-                   <Text style={styles.priceText}>{item.category}</Text>
+                  <Text style={styles.priceText}>{item.category}</Text>
                 </View>
                 <Image
                   source={{
@@ -254,9 +266,8 @@ export default function Home({ navigation }) {
           )}
           contentContainerStyle={styles.menulist}
         />
-       
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -270,26 +281,19 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#fff",
+    backgroundColor: "white",
     alignItems: "center",
     zIndex: 10, // Ensures the header stays on top
-    height: 110, // Fixed header height
+    height: 80, // Fixed header height
     flexDirection: "row",
-    
+    marginTop: 50,
   },
-  backIcon: {
-    width: 60,
-    height: 60,
-    resizeMode: "contain",
-    marginLeft: 15,
-    marginTop: 35,
-  },
+
   logo: {
     width: 170,
     height: 100,
     resizeMode: "contain",
-    marginLeft: 50,
-    marginTop: 35,
+    marginLeft: 120,
   },
   profile: {
     width: 60,
@@ -315,12 +319,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   profileContainer: {
-    marginTop: 35,
-    marginLeft: 50,
+    paddingLeft: 55,
   },
   scrollableContainer: {
     flex: 1,
-    marginTop: 105, // Adjust this margin based on the header height
+    marginTop: 67, // Adjust this margin based on the header height
   },
   scrollableContent: {
     paddingTop: 5,
@@ -403,6 +406,7 @@ const styles = StyleSheet.create({
   },
   menulist: {
     padding: 15,
+    backgroundColor: "white",
   },
   scrollText: {
     width: 270,
@@ -418,23 +422,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#EDEFEE",
     marginBottom: 25,
   },
-  delivery:{
-     fontSize: 20,
+  delivery: {
+    fontSize: 20,
     fontFamily: "KarlaBold",
-    marginTop: 20,
-    marginLeft: 24.5,
-    marginBottom: 10,
+    paddingTop: 20,
+    paddingLeft: 24.5,
+    paddingBottom: 10,
+    backgroundColor: "white",
   },
-  categoryComponent:{
-   
-   
+  categoryComponent: {
     backgroundColor: "white", // Ensure background color to prevent overlap issue
-    zIndex: 1, // 
+    zIndex: 1, //
   },
-   categoryDivider: {
+  categoryDivider: {
     height: 1,
     width: "100%",
     backgroundColor: "#EDEFEE",
     marginTop: 5,
-   },
+  },
 });

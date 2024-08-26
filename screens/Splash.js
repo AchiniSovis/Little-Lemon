@@ -1,27 +1,24 @@
-
-import { View, Text, StyleSheet, Image } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, StyleSheet, Image } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 
 SplashScreen.preventAutoHideAsync();
 
-export default function Splash({navigation}) {
-
-const [isLoading, setIsLoading] = useState(false);
+export default function Splash({ navigation }) {
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
-
- // Simulate a delay if needed (optional)
+        // Simulate a delay if needed (optional)
         //await new Promise(resolve => setTimeout(resolve, 3000));
 
         const value = await AsyncStorage.getItem("UserName");
         if (value) {
-          navigation.navigate('Home');
+          navigation.navigate("Home");
         } else {
-          navigation.navigate('Onboarding');
+          navigation.navigate("Onboarding");
         }
       } catch (error) {
         console.log(error);
@@ -34,20 +31,21 @@ const [isLoading, setIsLoading] = useState(false);
     checkOnboardingStatus();
   }, [navigation]);
 
-   if (isLoading) {
+  if (isLoading) {
     // Show splash screen content while loading
     return (
       <View style={styles.container}>
-        <Image style={styles.logo} source={require('../assets/little-lemon-logo.png')} />
+        <Image
+          style={styles.logo}
+          source={require("../assets/little-lemon-logo.png")}
+        />
         <Text style={styles.text}>LOADING...</Text>
       </View>
     );
-  } 
+  }
 
   // Return null or a placeholder if needed, though navigation should be handled before this point
   return null;
-
-
 }
 
 const styles = StyleSheet.create({
@@ -63,10 +61,8 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
   text: {
-    
     fontSize: 30,
     color: "#495E57",
     marginTop: 110,
-   
   },
 });

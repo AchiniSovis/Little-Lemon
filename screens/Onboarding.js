@@ -25,7 +25,7 @@ export default function Onboarding({ navigation }) {
 
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
-  //const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({});
 
   const isFirstNameValid =
     firstName.trim() !== "" && /^[a-zA-Z]+$/.test(firstName);
@@ -34,13 +34,13 @@ export default function Onboarding({ navigation }) {
       email
     );
 
-  // const validateInputs = () => {
-  //   const newErrors = {};
-  //   if (!isFirstNameValid) newErrors.firstName = "Invalid first name.";
-  //   if (!isEmailValid) newErrors.email = "Invalid email address.";
-  //   setErrors(newErrors);
-  //   return Object.keys(newErrors).length === 0;
-  // };
+  const validateInputs = () => {
+    const newErrors = {};
+    if (!isFirstNameValid) newErrors.firstName = "Invalid first name.";
+    if (!isEmailValid) newErrors.email = "Invalid email address.";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   useEffect(() => {
     getData();
@@ -59,7 +59,7 @@ export default function Onboarding({ navigation }) {
   };
 
   const setData = async () => {
-    if (isFirstNameValid && isEmailValid) {
+    if (validateInputs()) {
       try {
         await AsyncStorage.setItem("UserName", firstName);
         await AsyncStorage.setItem("UserEmail", email);
@@ -122,7 +122,7 @@ export default function Onboarding({ navigation }) {
               onChangeText={(value) => setFirstName(value)}
               keyboardType={"default"}
             />
-            
+            <Text style={styles.errorText}>{errors.firstName}</Text>
             <Text style={styles.inputTitle}>Email</Text>
             <TextInput
               style={styles.inputBox}
@@ -130,7 +130,7 @@ export default function Onboarding({ navigation }) {
               onChangeText={setEmail}
               keyboardType={"email-address"}
             />
-            
+            <Text style={styles.errorText}>{errors.email}</Text>
 
             <TouchableOpacity
               style={[
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     height: 100,
     resizeMode: "contain",
     marginTop: 35,
-    marginRight: 7
+    marginRight: 7,
   },
 
   scrollableContainer: {
